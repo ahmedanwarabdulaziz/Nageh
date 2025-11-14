@@ -1997,6 +1997,7 @@ export default function MembersDirectoryPage({
     async (categoryId: string) => {
       const category = categoriesById[categoryId];
       if (!category) {
+        setCategoryError('التصنيف غير موجود');
         return;
       }
 
@@ -2004,9 +2005,17 @@ export default function MembersDirectoryPage({
       setDeletingCategoryId(categoryId);
 
       try {
-        await fetchWithAuth(`/api/member-categories/${categoryId}`, {
+        const response = await fetchWithAuth(`/api/member-categories/${categoryId}`, {
           method: 'DELETE',
         });
+
+        // Check if response indicates success
+        if (!response || (typeof response === 'object' && 'error' in response)) {
+          const errorMessage = typeof response === 'object' && response !== null && 'error' in response
+            ? String(response.error)
+            : 'تعذر حذف التصنيف';
+          throw new Error(errorMessage);
+        }
 
         const scopeKey = makeScopeKey(category.scopeType, category.scopeId);
         setCategoriesById((prev) => {
@@ -2034,7 +2043,12 @@ export default function MembersDirectoryPage({
         );
       } catch (error) {
         console.error('Failed to delete category', error);
-        setCategoryError(error instanceof Error ? error.message : 'تعذر حذف التصنيف');
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : typeof error === 'object' && error !== null && 'error' in error
+          ? String(error.error)
+          : 'تعذر حذف التصنيف';
+        setCategoryError(errorMessage);
       } finally {
         setDeletingCategoryId(null);
       }

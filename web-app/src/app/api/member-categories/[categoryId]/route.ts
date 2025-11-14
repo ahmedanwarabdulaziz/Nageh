@@ -146,10 +146,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ categoryId: string }> },
 ) {
+  let categoryId = 'unknown';
   try {
     const context = await authenticateRequest(request, ['superAdmin', 'admin', 'teamHead', 'teamLeader']);
 
-    const { categoryId } = await params;
+    const resolvedParams = await params;
+    categoryId = resolvedParams.categoryId;
     if (!categoryId) {
       return NextResponse.json({ error: 'معرف التصنيف مطلوب' }, { status: 400 });
     }
@@ -171,8 +173,21 @@ export async function DELETE(
     if (error instanceof ForbiddenError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
-    console.error('Failed to delete member category', error);
-    return NextResponse.json({ error: 'تعذر حذف التصنيف' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[DELETE /api/member-categories/:categoryId] Failed to delete category:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+      categoryId,
+    });
+    return NextResponse.json(
+      { 
+        error: 'تعذر حذف التصنيف',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 

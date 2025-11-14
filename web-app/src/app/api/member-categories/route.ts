@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
     };
 
     if (context.role === 'superAdmin' || context.role === 'admin') {
+      // For admin roles, if scopeType and scopeId are provided, only return categories for that scope
+      // This ensures categories are properly scoped even for admins
       if (requestedScopeType && requestedScopeId) {
         const scopeType =
           requestedScopeType === 'head' || requestedScopeType === 'leader'
@@ -99,6 +101,8 @@ export async function GET(request: NextRequest) {
         const list = await fetchCategoriesForScope(scopeType, requestedScopeId);
         addCategories(list);
       } else {
+        // If no scope is specified, return all categories (for admin overview)
+        // But this should rarely be used - the UI should always specify scope
         const snapshot = await adminDb.collection('memberCategories').orderBy('name').limit(500).get();
         snapshot.docs.forEach((doc) => {
           const data = doc.data() as Omit<MemberCategory, 'id'>;
