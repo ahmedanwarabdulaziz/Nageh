@@ -536,9 +536,10 @@ function StatusSelect({
 
 type StatusHistoryListProps = {
   scopes: MemberStatusScope[];
-  formatScopeLabel: (scope: MemberStatusScope) => string;
+  formatScopeLabel: (scope: MemberStatusScope, memberHeadId?: string | null) => string;
   getCategoryDetails?: (categoryId: string) => MemberCategory | null;
   variant?: 'card' | 'table';
+  memberHeadId?: string | null;
 };
 
 function StatusHistoryList({
@@ -546,6 +547,7 @@ function StatusHistoryList({
   formatScopeLabel,
   getCategoryDetails,
   variant = 'card',
+  memberHeadId,
 }: StatusHistoryListProps) {
   if (scopes.length === 0) {
     return <p className="text-xs text-white/50">لا توجد حالات مخصصة.</p>;
@@ -569,7 +571,7 @@ function StatusHistoryList({
   return (
     <ul className={containerClass}>
       {scopes.map((scope, index) => {
-        const label = formatScopeLabel(scope);
+        const label = formatScopeLabel(scope, memberHeadId);
         const updatedAt = formatScopeTimestamp(scope.updatedAt);
         const categories =
           Array.isArray(scope.categories) && scope.categories.length > 0 ? scope.categories : [];
@@ -830,7 +832,7 @@ function MemberCard({
   canEdit: boolean;
   displayStatus: MemberStatus;
   resolveVisibleScopes: (member: MemberSearchRecord) => MemberStatusScope[];
-  formatScopeLabel: (scope: MemberStatusScope) => string;
+  formatScopeLabel: (scope: MemberStatusScope, memberHeadId?: string | null) => string;
   getCategoryDetails: (categoryId: string) => MemberCategory | null;
   availableCategoryIds: string[];
   selectedCategoryIds: string[];
@@ -1090,6 +1092,7 @@ function MemberCard({
               formatScopeLabel={formatScopeLabel}
               getCategoryDetails={getCategoryDetails}
               variant="card"
+              memberHeadId={member.assignments?.headId ?? null}
             />
           </div>
         </div>
@@ -1122,7 +1125,7 @@ function MembersTable({
   canEditStatus: (member: MemberSearchRecord) => boolean;
   getDisplayStatus: (member: MemberSearchRecord) => MemberStatus;
   resolveVisibleScopes: (member: MemberSearchRecord) => MemberStatusScope[];
-  formatScopeLabel: (scope: MemberStatusScope) => string;
+  formatScopeLabel: (scope: MemberStatusScope, memberHeadId?: string | null) => string;
   getCategoryDetails: (categoryId: string) => MemberCategory | null;
   getAvailableCategories: (member: MemberSearchRecord) => string[];
   getSelectedCategories: (member: MemberSearchRecord) => string[];
@@ -1288,6 +1291,7 @@ function MembersTable({
                     formatScopeLabel={formatScopeLabel}
                     getCategoryDetails={getCategoryDetails}
                     variant="table"
+                    memberHeadId={member.assignments?.headId ?? null}
                   />
                 </td>
               </tr>
@@ -1874,7 +1878,7 @@ export default function MembersDirectoryPage({
   );
 
   const formatScopeLabel = useCallback(
-    (scope: MemberStatusScope) => {
+    (scope: MemberStatusScope, memberHeadId?: string | null) => {
       if (scope.scopeType === 'global') {
         const name = scope.displayName ?? 'عام';
         return `الحالة العامة (${name})`;
@@ -1895,12 +1899,19 @@ export default function MembersDirectoryPage({
         const name =
           scope.displayName ??
           (scope.scopeId ? leaderNames[scope.scopeId] ?? scope.scopeId : 'غير معروف');
+        
+        // For admins, show which head this leader belongs to
+        if ((role === 'superAdmin' || role === 'admin') && memberHeadId) {
+          const headName = headNames[memberHeadId] ?? memberHeadId;
+          return `حالة القائد (${name} - تحت رئيس: ${headName}${isSelf ? ' - أنت' : ''})`;
+        }
+        
         return `حالة القائد (${name}${isSelf ? ' - أنت' : ''})`;
       }
 
       return scope.displayName ?? scope.scopeId ?? 'غير معروف';
     },
-    [headNames, leaderNames, leaderPriorityKeys, profile?.headId],
+    [headNames, leaderNames, leaderPriorityKeys, profile?.headId, role],
   );
 
   const handleMobileUpdate = (memberId: string, mobiles: string[]) => {
