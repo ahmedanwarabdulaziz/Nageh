@@ -110,32 +110,30 @@ export function getAdminDb() {
 }
 
 // Lazy getters for backward compatibility - these are only accessed at runtime
-export const adminAuth = {
-  get createUser() {
-    return getAdminAuth().createUser.bind(getAdminAuth());
+// Use Proxy to intercept all property access and method calls
+export const adminAuth = new Proxy({} as ReturnType<typeof getAuth>, {
+  get(_target, prop) {
+    const auth = getAdminAuth();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = (auth as Record<string, any>)[prop as string];
+    if (typeof value === 'function') {
+      return value.bind(auth);
+    }
+    return value;
   },
-  get setCustomUserClaims() {
-    return getAdminAuth().setCustomUserClaims.bind(getAdminAuth());
-  },
-  get getUser() {
-    return getAdminAuth().getUser.bind(getAdminAuth());
-  },
-  get updateUser() {
-    return getAdminAuth().updateUser.bind(getAdminAuth());
-  },
-} as ReturnType<typeof getAuth>;
+}) as ReturnType<typeof getAuth>;
 
-export const adminDb = {
-  get collection() {
-    return getAdminDb().collection.bind(getAdminDb());
+export const adminDb = new Proxy({} as ReturnType<typeof getFirestore>, {
+  get(_target, prop) {
+    const db = getAdminDb();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = (db as Record<string, any>)[prop as string];
+    if (typeof value === 'function') {
+      return value.bind(db);
+    }
+    return value;
   },
-  get doc() {
-    return getAdminDb().doc.bind(getAdminDb());
-  },
-  get batch() {
-    return getAdminDb().batch.bind(getAdminDb());
-  },
-} as ReturnType<typeof getFirestore>;
+}) as ReturnType<typeof getFirestore>;
 
 // Lazy getter - only accessed at runtime, not during build
 // This prevents any access during build time
