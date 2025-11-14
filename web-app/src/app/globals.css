@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-brand-black: #0f0f0f;
+  --color-brand-gold: #c9a548;
+  --color-brand-white: #ffffff;
+  --font-heading: 'Tajawal', 'Segoe UI', sans-serif;
+  --font-body: 'Cairo', 'Segoe UI', sans-serif;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  @apply bg-[var(--color-brand-black)] text-[var(--color-brand-white)] font-body;
+}
+
+.rtl-container {
+  direction: rtl;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #f4d37f 0%, #c9a548 50%, #927230 100%);
+}
+
+select.app-select {
+  appearance: none;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  color: #ffffff;
+  padding: 0.75rem 2.75rem 0.75rem 1rem;
+}
+
+select.app-select:focus {
+  border-color: var(--color-brand-gold);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 165, 72, 0.2);
+}
+
+select.app-select option {
+  background-color: #151922;
+  color: #f7f8fc;
+}
+
+
+

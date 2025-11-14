@@ -1,0 +1,13 @@
+{
+  "name": "منصة الحملة الانتخابية",
+  "short_name": "حملة النادي",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#c9a548",
+  "description": "إدارة فريق الحملة الانتخابية للنادي بكل احترافية وسرعة."
+}
+
+
