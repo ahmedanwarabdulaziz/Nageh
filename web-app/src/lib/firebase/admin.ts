@@ -10,7 +10,13 @@ declare global {
 
 function loadServiceAccount() {
   // During build time, skip initialization to prevent errors
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
+  // Check multiple ways Next.js indicates build phase
+  const isBuildTime =
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ||
+    process.argv.includes('build');
+  
+  if (isBuildTime) {
     return null;
   }
 
@@ -43,7 +49,13 @@ function loadServiceAccount() {
 
 function initializeFirebaseAdmin(): App | null {
   // Skip initialization during build
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
+  // Check multiple ways Next.js indicates build phase
+  const isBuildTime =
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) ||
+    process.argv.includes('build');
+  
+  if (isBuildTime) {
     return null;
   }
 
@@ -126,10 +138,22 @@ export const adminDb = {
 } as ReturnType<typeof getFirestore>;
 
 // Lazy getter - only accessed at runtime, not during build
-export const firebaseAdminApp = {
-  get name() {
-    return getFirebaseAdminApp().name;
+// This prevents any access during build time
+export const firebaseAdminApp = new Proxy({} as App, {
+  get(_target, prop) {
+    // During build, return undefined for any property access
+    const isBuildTime =
+      process.env.NEXT_PHASE === 'phase-production-build' ||
+      (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) ||
+      process.argv.includes('build');
+    
+    if (isBuildTime) {
+      return undefined;
+    }
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (getFirebaseAdminApp() as Record<string, any>)[prop as string];
   },
-} as App;
+});
 
 
