@@ -9,6 +9,11 @@ declare global {
 }
 
 function loadServiceAccount() {
+  // During build time, skip initialization to prevent errors
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return null;
+  }
+
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
     ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n')
     : undefined;
@@ -36,7 +41,12 @@ function loadServiceAccount() {
   throw new Error('Firebase admin credentials are not configured.');
 }
 
-function initializeFirebaseAdmin(): App {
+function initializeFirebaseAdmin(): App | null {
+  // Skip initialization during build
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return null;
+  }
+
   if (global._firebaseAdminApp) {
     return global._firebaseAdminApp;
   }
@@ -47,6 +57,10 @@ function initializeFirebaseAdmin(): App {
   }
 
   const serviceAccount = loadServiceAccount();
+  if (!serviceAccount) {
+    return null;
+  }
+
   global._firebaseAdminApp = initializeApp({
     credential: cert(serviceAccount),
   });
@@ -54,8 +68,68 @@ function initializeFirebaseAdmin(): App {
   return global._firebaseAdminApp;
 }
 
-export const firebaseAdminApp = initializeFirebaseAdmin();
-export const adminAuth = getAuth(firebaseAdminApp);
-export const adminDb = getFirestore(firebaseAdminApp);
+// Lazy initialization - only initialize when actually called at runtime
+let _adminApp: App | null = null;
+let _adminAuthInstance: ReturnType<typeof getAuth> | null = null;
+let _adminDbInstance: ReturnType<typeof getFirestore> | null = null;
+
+function getFirebaseAdminApp(): App {
+  if (!_adminApp) {
+    _adminApp = initializeFirebaseAdmin();
+    if (!_adminApp) {
+      throw new Error('Firebase admin is not available. Make sure environment variables are set.');
+    }
+  }
+  return _adminApp;
+}
+
+export function getAdminAuth() {
+  if (!_adminAuthInstance) {
+    _adminAuthInstance = getAuth(getFirebaseAdminApp());
+  }
+  return _adminAuthInstance;
+}
+
+export function getAdminDb() {
+  if (!_adminDbInstance) {
+    _adminDbInstance = getFirestore(getFirebaseAdminApp());
+  }
+  return _adminDbInstance;
+}
+
+// Lazy getters for backward compatibility - these are only accessed at runtime
+export const adminAuth = {
+  get createUser() {
+    return getAdminAuth().createUser.bind(getAdminAuth());
+  },
+  get setCustomUserClaims() {
+    return getAdminAuth().setCustomUserClaims.bind(getAdminAuth());
+  },
+  get getUser() {
+    return getAdminAuth().getUser.bind(getAdminAuth());
+  },
+  get updateUser() {
+    return getAdminAuth().updateUser.bind(getAdminAuth());
+  },
+} as ReturnType<typeof getAuth>;
+
+export const adminDb = {
+  get collection() {
+    return getAdminDb().collection.bind(getAdminDb());
+  },
+  get doc() {
+    return getAdminDb().doc.bind(getAdminDb());
+  },
+  get batch() {
+    return getAdminDb().batch.bind(getAdminDb());
+  },
+} as ReturnType<typeof getFirestore>;
+
+// Lazy getter - only accessed at runtime, not during build
+export const firebaseAdminApp = {
+  get name() {
+    return getFirebaseAdminApp().name;
+  },
+} as App;
 
 
