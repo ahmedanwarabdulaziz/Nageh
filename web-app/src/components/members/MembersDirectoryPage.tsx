@@ -1617,6 +1617,7 @@ export default function MembersDirectoryPage({
       }
 
       if (role === 'teamLeader') {
+        // Leaders should ONLY use their own leader scope status, not head status
         for (const key of leaderPriorityKeys) {
           if (!key) continue;
           const leaderScope = member.statusScopes?.find(
@@ -1626,6 +1627,12 @@ export default function MembersDirectoryPage({
             return normalizeScopeStatus(leaderScope.status);
           }
         }
+        // Leaders should NOT fall back to head status
+        // Return the member's default status or global scope status
+        const globalScope = member.statusScopes?.find(
+          (scope) => scope.scopeType === 'global' && scope.scopeId === null,
+        );
+        return normalizeScopeStatus(globalScope?.status ?? member.status);
       }
 
       const globalScope = member.statusScopes?.find((scope) => scope.scopeType === 'global');
@@ -1800,6 +1807,7 @@ export default function MembersDirectoryPage({
       }
 
       if (role === 'teamLeader') {
+        // Leaders should ONLY use their own leader scope status, not head status
         const leaderScopes = scopes.filter((scope) => scope.scopeType === 'leader');
         for (const key of leaderPriorityKeys) {
           const matching = leaderScopes.find((scope) => scope.scopeId === key);
@@ -1808,16 +1816,7 @@ export default function MembersDirectoryPage({
           }
         }
 
-        const headId = profile?.headId ?? null;
-        if (headId) {
-          const headScope = scopes.find(
-            (scope) => scope.scopeType === 'head' && scope.scopeId === headId,
-          );
-          if (headScope) {
-            return headScope.status;
-          }
-        }
-
+        // Leaders should NOT fall back to head status - only use global or default
         return globalScope?.status ?? member.status;
       }
 
@@ -1839,10 +1838,12 @@ export default function MembersDirectoryPage({
           return scopes;
         }
         const headId = profile.headId;
+        // Headers can see: global, their own head scope, and all their leaders' scopes
         return scopes.filter((scope) => {
           if (scope.scopeType === 'global') return true;
           if (scope.scopeType === 'head' && scope.scopeId === headId) return true;
           if (scope.scopeType === 'leader') {
+            // Show all leader scopes for members assigned to this head
             return !member.assignments?.headId || member.assignments?.headId === headId;
           }
           return false;
@@ -1853,12 +1854,13 @@ export default function MembersDirectoryPage({
         const allowed = new Set<string>(
           leaderPriorityKeys.filter((value): value is string => Boolean(value)),
         );
-        if (profile?.headId) {
-          allowed.add(profile.headId);
-        }
+        // Leaders should ONLY see: global scope and their own leader scope
+        // They should NOT see head scopes
         return scopes.filter((scope) => {
           if (scope.scopeType === 'global') return true;
-          if (scope.scopeType === 'head' && scope.scopeId === profile?.headId) return true;
+          // Explicitly exclude head scopes for leaders
+          if (scope.scopeType === 'head') return false;
+          // Only show their own leader scope
           if (scope.scopeType === 'leader' && scope.scopeId && allowed.has(scope.scopeId)) {
             return true;
           }
