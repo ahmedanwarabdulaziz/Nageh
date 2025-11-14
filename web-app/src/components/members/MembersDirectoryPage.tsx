@@ -1466,11 +1466,9 @@ export default function MembersDirectoryPage({
     ensureScopeCategoriesLoaded(manageableScope.scopeType, manageableScope.scopeId);
   }, [ensureScopeCategoriesLoaded, manageableScope]);
 
-  useEffect(() => {
-    if (role === 'teamLeader' && profile?.headId) {
-      ensureScopeCategoriesLoaded('head', profile.headId);
-    }
-  }, [ensureScopeCategoriesLoaded, profile?.headId, role]);
+  // Removed: Leaders should NOT load head categories
+  // Each leader should only see and manage their own categories
+  // Head categories are loaded separately when viewing member data, but not for management
 
   useEffect(() => {
     const scopesToLoad = new Set<string>();
@@ -1481,6 +1479,7 @@ export default function MembersDirectoryPage({
     }
     
     // Also load categories for all scopes found in member results that have categories assigned
+    // BUT: For leaders, only load their own leader scope categories, not head categories
     results.forEach((record) => {
       (record.statusScopes ?? []).forEach((scope) => {
         if (
@@ -1490,6 +1489,12 @@ export default function MembersDirectoryPage({
           Array.isArray(scope.categories) &&
           scope.categories.length > 0
         ) {
+          // For teamLeader role, only load their own leader scope categories
+          // They can see head categories in member data, but shouldn't load them for management
+          if (role === 'teamLeader' && scope.scopeType === 'head') {
+            // Skip head categories for leaders - they should only manage their own categories
+            return;
+          }
           scopesToLoad.add(makeScopeKey(scope.scopeType, scope.scopeId));
         }
       });
@@ -1502,7 +1507,7 @@ export default function MembersDirectoryPage({
         void ensureScopeCategoriesLoaded(scopeType, scopeId);
       }
     });
-  }, [ensureScopeCategoriesLoaded, results, manageableScope]);
+  }, [ensureScopeCategoriesLoaded, results, manageableScope, role]);
 
   const getCategoryDetails = useCallback(
     (categoryId: string) => categoriesById[categoryId] ?? null,

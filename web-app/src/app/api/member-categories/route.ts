@@ -128,22 +128,35 @@ export async function GET(request: NextRequest) {
     }
 
     if (context.role === 'teamLeader') {
-      const headId = context.profile.headId;
       const leaderIds = Array.isArray(context.profile.leaderIds)
         ? context.profile.leaderIds.filter((id): id is string => Boolean(id))
         : [];
       const leaderScopeId = leaderIds[0] && leaderIds[0].length > 0 ? leaderIds[0] : context.uid;
 
-      const queries: Array<Promise<MemberCategory[]>> = [
-        fetchCategoriesForScope('leader', leaderScopeId),
-      ];
-
-      if (headId) {
-        queries.push(fetchCategoriesForScope('head', headId));
+      // Leaders should ONLY see their own categories, not the head's categories
+      // If a specific scope is requested, only return categories for that scope
+      if (requestedScopeType && requestedScopeId) {
+        const scopeType =
+          requestedScopeType === 'head' || requestedScopeType === 'leader'
+            ? (requestedScopeType as MemberCategoryScopeType)
+            : null;
+        if (!scopeType) {
+          return NextResponse.json({ error: 'نطاق غير صالح' }, { status: 400 });
+        }
+        // Only allow leaders to access their own leader scope categories
+        if (scopeType === 'leader' && requestedScopeId === leaderScopeId) {
+          const list = await fetchCategoriesForScope('leader', leaderScopeId);
+          addCategories(list);
+        } else if (scopeType === 'head') {
+          // Leaders can view head categories (for display purposes) but cannot manage them
+          const list = await fetchCategoriesForScope('head', requestedScopeId);
+          addCategories(list);
+        }
+      } else {
+        // If no specific scope requested, only return the leader's own categories
+        const list = await fetchCategoriesForScope('leader', leaderScopeId);
+        addCategories(list);
       }
-
-      const results = await Promise.all(queries);
-      results.forEach(addCategories);
 
       return NextResponse.json({ categories });
     }
