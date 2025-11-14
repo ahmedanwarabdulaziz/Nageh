@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, UsersThree, Sparkle, ShieldCheck } from '@phosphor-icons/react/dist/ssr';
 import LoginForm from '@/components/auth/LoginForm';
@@ -26,18 +27,22 @@ export default function LandingPage() {
   return (
     <main className="rtl-container">
       <section className="relative overflow-hidden bg-[var(--color-brand-black)]">
-        <div className="absolute inset-0 opacity-60 gold-gradient" aria-hidden="true" />
+        <div className="absolute inset-0">
+          <Image
+            src="/nageh-hero.jpg"
+            alt=""
+            fill
+            className="object-cover"
+            priority
+            aria-hidden="true"
+          />
+        </div>
         <div className="relative z-10 mx-auto flex min-h-[80vh] max-w-6xl flex-col items-center justify-center px-6 py-24 text-center">
-          <span className="mb-4 inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm font-bold tracking-wide text-[var(--color-brand-gold)] shadow-lg backdrop-blur">
-            منصة انتخابية احترافية
-            <Sparkle size={20} weight="fill" />
-          </span>
-          <h1 className="mb-6 max-w-3xl font-heading text-4xl leading-tight text-white md:text-5xl lg:text-6xl">
-            نُعزز فريق الحملة الانتخابية للوصول إلى كل عضو بثقة وشفافية
+          <h1 className="mb-6 mt-32 max-w-3xl font-heading text-5xl leading-tight text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] md:text-6xl lg:text-7xl">
+            ناجح البارودي
           </h1>
           <p className="mb-10 max-w-2xl text-lg text-white/85 md:text-xl">
-            إدارة تفاعلية لفرق الحملة، متابعة الأصوات، تنظيم فرق العمل، وتجهيز يوم
-            الانتخاب بخطة واضحة وسهلة الاستخدام على الأجهزة الذكية.
+            الموقع الالكتروني للحملة الانتخابية لرئاسة مجلس ادارة نادي اسيوط الرياضي 2025
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-lg">
             <button

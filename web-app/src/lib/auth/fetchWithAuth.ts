@@ -24,8 +24,21 @@ export async function fetchWithAuth<T = unknown>(input: RequestInfo | URL, init?
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    const message = payload?.error ?? 'Request failed';
-    throw new Error(message);
+    const message = payload?.error ?? payload?.details ?? 'Request failed';
+    const error = new Error(message);
+    // Add additional error details
+    if (payload?.details) {
+      (error as Error & { details?: string }).details = payload.details;
+    }
+    if (payload?.name) {
+      (error as Error & { name?: string }).name = payload.name;
+    }
+    console.error('API Error:', { 
+      status: response.status, 
+      url: input,
+      payload: JSON.stringify(payload, null, 2)
+    });
+    throw error;
   }
 
   const contentType = response.headers.get('content-type');
