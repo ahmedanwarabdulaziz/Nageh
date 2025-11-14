@@ -549,7 +549,10 @@ function StatusHistoryList({
   variant = 'card',
   memberHeadId,
 }: StatusHistoryListProps) {
-  if (scopes.length === 0) {
+  // Filter out "chance" status from the log
+  const filteredScopes = scopes.filter((scope) => scope.status !== 'chance');
+
+  if (filteredScopes.length === 0) {
     return <p className="text-xs text-white/50">لا توجد حالات مخصصة.</p>;
   }
 
@@ -558,10 +561,10 @@ function StatusHistoryList({
       ? 'space-y-2 text-xs text-white/70'
       : 'space-y-1 text-[11px] text-white/70';
 
-  const itemClass =
+  const baseItemClass =
     variant === 'card'
-      ? 'space-y-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2'
-      : 'space-y-1 rounded-xl border border-white/10 bg-white/5 px-2 py-2';
+      ? 'space-y-2 rounded-2xl border px-3 py-2'
+      : 'space-y-1 rounded-xl border px-2 py-2';
 
   const headerClass =
     variant === 'card'
@@ -570,11 +573,19 @@ function StatusHistoryList({
 
   return (
     <ul className={containerClass}>
-      {scopes.map((scope, index) => {
+      {filteredScopes.map((scope, index) => {
         const label = formatScopeLabel(scope, memberHeadId);
-        const updatedAt = formatScopeTimestamp(scope.updatedAt);
         const categories =
           Array.isArray(scope.categories) && scope.categories.length > 0 ? scope.categories : [];
+        
+        // Color coding: light red for "no", light green for others
+        const isNoStatus = scope.status === 'no';
+        const bgColor = isNoStatus 
+          ? 'bg-red-500/10 border-red-500/20' 
+          : 'bg-green-500/10 border-green-500/20';
+        
+        const itemClass = `${baseItemClass} ${bgColor}`;
+
         return (
           <li
             key={`${scope.scopeType}-${scope.scopeId ?? 'global'}-${index}`}
@@ -585,7 +596,6 @@ function StatusHistoryList({
                 <span className="font-semibold">{label}</span> —{' '}
                 {STATUS_LABELS[scope.status]}
               </span>
-              <span className="text-[10px] text-white/50">{updatedAt}</span>
             </div>
             {categories.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2">
