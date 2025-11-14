@@ -34,7 +34,15 @@ If you're getting 404 errors:
 3. Ensure the build completes successfully (check build logs)
 4. Verify API routes are accessible (they should be at `/api/*`)
 
-## Note
+## Important: Root Directory Must Be Set in Vercel Dashboard
 
-The `vercel.json` file at the root of the repository is configured to point Vercel to the `web-app` directory. If Vercel still can't find the app, manually set the Root Directory in the Vercel dashboard.
+The `rootDirectory` property is NOT valid in `vercel.json`. You MUST manually set the Root Directory in the Vercel dashboard:
+
+1. Go to your project in Vercel
+2. Navigate to Settings → General
+3. Scroll to "Root Directory"
+4. Click "Edit" and set it to `web-app`
+5. Save the changes
+
+This is the ONLY way to tell Vercel where your Next.js app is located when it's in a subdirectory.
 
