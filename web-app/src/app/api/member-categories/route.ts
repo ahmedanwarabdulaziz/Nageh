@@ -152,8 +152,20 @@ export async function GET(request: NextRequest) {
     if (error instanceof ForbiddenError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
-    console.error('Failed to load member categories', error);
-    return NextResponse.json({ error: 'تعذر تحميل التصنيفات' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[GET /api/member-categories] Failed to load categories:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+    });
+    return NextResponse.json(
+      { 
+        error: 'تعذر تحميل التصنيفات',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -222,8 +234,20 @@ export async function POST(request: NextRequest) {
     if (error instanceof ForbiddenError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
-    console.error('Failed to create member category', error);
-    return NextResponse.json({ error: 'تعذر إنشاء التصنيف' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[POST /api/member-categories] Failed to create category:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+    });
+    return NextResponse.json(
+      { 
+        error: 'تعذر إنشاء التصنيف',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 

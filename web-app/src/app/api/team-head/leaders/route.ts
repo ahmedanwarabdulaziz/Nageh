@@ -45,8 +45,20 @@ export async function GET(request: NextRequest) {
     if (error instanceof ForbiddenError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
-    console.error('Failed to load leaders for head', error);
-    return NextResponse.json({ error: 'تعذر تحميل القادة' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[GET /api/team-head/leaders] Failed to load leaders:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+    });
+    return NextResponse.json(
+      { 
+        error: 'تعذر تحميل القادة',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -142,8 +154,20 @@ export async function POST(request: NextRequest) {
     if ((error as { code?: string }).code === 'auth/email-already-exists') {
       return NextResponse.json({ error: 'هذا البريد الإلكتروني مستخدم بالفعل' }, { status: 409 });
     }
-    console.error('Failed to create leader for head', error);
-    return NextResponse.json({ error: 'تعذر إنشاء القائد' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[POST /api/team-head/leaders] Failed to create leader:', {
+      message: errorMessage,
+      stack: errorStack,
+      error,
+    });
+    return NextResponse.json(
+      { 
+        error: 'تعذر إنشاء القائد',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
 
