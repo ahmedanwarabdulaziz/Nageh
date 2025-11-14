@@ -104,28 +104,6 @@ function toScopeType(value: unknown): MemberStatusScopeType {
   return value === 'head' || value === 'leader' ? value : 'global';
 }
 
-function formatScopeTimestamp(value: MemberStatusScope['updatedAt']) {
-  if (!value) return 'غير محدد';
-  try {
-    if (value instanceof Date) {
-      return value.toLocaleString('ar-EG');
-    }
-    if (typeof value === 'string') {
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? value : date.toLocaleString('ar-EG');
-    }
-    if (typeof value === 'object' && value !== null && 'toDate' in value) {
-      const candidate = value as { toDate?: () => Date };
-      if (typeof candidate.toDate === 'function') {
-        return candidate.toDate().toLocaleString('ar-EG');
-      }
-    }
-  } catch (error) {
-    console.error('Failed to format scope timestamp', error);
-  }
-  return 'غير محدد';
-}
-
 type StatusFilter = MemberStatus | 'all';
 
 interface SearchFormState {
