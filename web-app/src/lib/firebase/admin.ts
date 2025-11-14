@@ -10,13 +10,8 @@ declare global {
 
 function loadServiceAccount() {
   // During build time, skip initialization to prevent errors
-  // Check multiple ways Next.js indicates build phase
-  const isBuildTime =
-    process.env.NEXT_PHASE === 'phase-production-build' ||
-    process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ||
-    process.argv.includes('build');
-  
-  if (isBuildTime) {
+  // Only check NEXT_PHASE as it's the most reliable indicator
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
     return null;
   }
 
@@ -25,9 +20,18 @@ function loadServiceAccount() {
     : undefined;
 
   if (privateKey) {
+    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+    
+    if (!projectId || !clientEmail) {
+      throw new Error(
+        'Firebase admin configuration incomplete. Missing FIREBASE_ADMIN_PROJECT_ID or FIREBASE_ADMIN_CLIENT_EMAIL. Please set all three: FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, and FIREBASE_ADMIN_PRIVATE_KEY in Vercel.'
+      );
+    }
+    
     return {
-      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      projectId,
+      clientEmail,
       privateKey,
     };
   }
@@ -49,13 +53,8 @@ function loadServiceAccount() {
 
 function initializeFirebaseAdmin(): App | null {
   // Skip initialization during build
-  // Check multiple ways Next.js indicates build phase
-  const isBuildTime =
-    process.env.NEXT_PHASE === 'phase-production-build' ||
-    (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) ||
-    process.argv.includes('build');
-  
-  if (isBuildTime) {
+  // Only check NEXT_PHASE as it's the most reliable indicator
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
     return null;
   }
 
@@ -87,9 +86,25 @@ let _adminDbInstance: ReturnType<typeof getFirestore> | null = null;
 
 function getFirebaseAdminApp(): App {
   if (!_adminApp) {
-    _adminApp = initializeFirebaseAdmin();
-    if (!_adminApp) {
-      throw new Error('Firebase admin is not available. Make sure environment variables are set.');
+    try {
+      _adminApp = initializeFirebaseAdmin();
+      if (!_adminApp) {
+        // If we're not in build phase but got null, it means credentials are missing
+        if (process.env.NEXT_PHASE !== 'phase-production-build') {
+          throw new Error(
+            'Firebase admin credentials are not configured. Please set FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, and FIREBASE_ADMIN_PRIVATE_KEY in Vercel environment variables.'
+          );
+        }
+        throw new Error('Firebase admin is not available during build time.');
+      }
+    } catch (error) {
+      // Re-throw with more context if it's our error, otherwise wrap it
+      if (error instanceof Error && error.message.includes('Firebase admin')) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to initialize Firebase Admin: ${error instanceof Error ? error.message : String(error)}. Please check your environment variables in Vercel.`
+      );
     }
   }
   return _adminApp;
